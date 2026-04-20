@@ -52,11 +52,11 @@ WSGI_APPLICATION = 'Qwim_store.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('MYSQL_DATABASE', 'qwim_store'),
-        'USER': os.environ.get('MYSQL_USER', 'root'),
-        'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'Qwim2026!'),
-        'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('MYSQL_PORT', '3306'),
+        'NAME': os.environ.get('MYSQLDATABASE', 'qwim_store'),
+        'USER': os.environ.get('MYSQLUSER', 'root'),
+        'PASSWORD': os.environ.get('MYSQLPASSWORD', 'Qwim2026!'),
+        'HOST': os.environ.get('MYSQLHOST', '127.0.0.1'),
+        'PORT': os.environ.get('MYSQLPORT', '3306'),
     }
 }
 
