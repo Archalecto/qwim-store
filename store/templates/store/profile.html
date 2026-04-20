@@ -1,0 +1,138 @@
+{% extends 'store/base.html' %}
+{% block content %}
+
+<!-- Шапка профиля -->
+<div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:2.5rem;">
+    <div style="width:72px;height:72px;background:linear-gradient(135deg,var(--orange),var(--orange-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 0 24px var(--orange-glow);">
+        {{ user.username|slice:":1"|upper }}
+    </div>
+    <div>
+        <h1 style="font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;margin-bottom:2px;">
+            {{ user.username }}
+        </h1>
+        <span style="font-size:0.8rem;color:var(--text-muted);">
+            На сайте с {{ user.date_joined|date:"d.m.Y" }}
+        </span>
+        {% if user.email %}
+        <span style="font-size:0.8rem;color:var(--text-muted);margin-left:12px;">✉ {{ user.email }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Статистика -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;">
+
+    <div class="card" style="text-align:center;">
+        <div class="card-body">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--orange);">
+                {{ total_orders }}
+            </div>
+            <div style="font-size:0.78rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;">Заказов</div>
+        </div>
+    </div>
+
+    <div class="card" style="text-align:center;">
+        <div class="card-body">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--orange);">
+                {{ total_spent|floatformat:0 }} ₸
+            </div>
+            <div style="font-size:0.78rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;">Потрачено</div>
+        </div>
+    </div>
+
+    <div class="card" style="text-align:center;">
+        <div class="card-body">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--orange);">
+                {% with keys_count=orders|length %}
+                {{ keys_count }}
+                {% endwith %}
+            </div>
+            <div style="font-size:0.78rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;">Игр куплено</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Быстрые действия -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2.5rem;">
+
+    <a href="{% url 'my_orders' %}" class="card" style="text-decoration:none;padding:1.25rem;display:flex;align-items:center;gap:1rem;transition:border-color 0.2s;">
+        <div style="width:44px;height:44px;background:var(--orange-faint);border:1px solid var(--border-orange);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">
+            📋
+        </div>
+        <div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:600;">История покупок</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Все заказы и ключи</div>
+        </div>
+        <span style="margin-left:auto;color:var(--text-dim);">→</span>
+    </a>
+
+    <a href="/cart/" class="card" style="text-decoration:none;padding:1.25rem;display:flex;align-items:center;gap:1rem;transition:border-color 0.2s;">
+        <div style="width:44px;height:44px;background:var(--orange-faint);border:1px solid var(--border-orange);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">
+            🛒
+        </div>
+        <div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:600;">Корзина</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Перейти к покупкам</div>
+        </div>
+        <span style="margin-left:auto;color:var(--text-dim);">→</span>
+    </a>
+
+    <a href="/" class="card" style="text-decoration:none;padding:1.25rem;display:flex;align-items:center;gap:1rem;transition:border-color 0.2s;">
+        <div style="width:44px;height:44px;background:var(--orange-faint);border:1px solid var(--border-orange);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">
+            🎮
+        </div>
+        <div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:600;">Каталог</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Найти новую игру</div>
+        </div>
+        <span style="margin-left:auto;color:var(--text-dim);">→</span>
+    </a>
+
+</div>
+
+<!-- Последние заказы -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <h2 style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;">Последние покупки</h2>
+    <a href="{% url 'my_orders' %}" class="btn btn-ghost" style="font-size:0.8rem;">Все заказы →</a>
+</div>
+
+{% for order in recent_orders %}
+<div class="card mb-3" style="overflow:hidden;">
+    <div style="padding:0.9rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2);">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-family:'Rajdhani',sans-serif;font-weight:700;">Заказ #{{ order.id }}</span>
+            <span style="font-size:0.75rem;color:var(--text-dim);">{{ order.created_at|date:"d.m.Y" }}</span>
+        </div>
+        <span style="font-size:0.72rem;background:rgba(34,197,94,0.1);color:var(--success);padding:3px 10px;border-radius:6px;border:1px solid rgba(34,197,94,0.25);">
+            ✔ Оплачен
+        </span>
+    </div>
+    <div style="padding:0.75rem 1.25rem;">
+        {% for item in order.orderitem_set.all %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+            <div style="display:flex;align-items:center;gap:10px;">
+                {% if item.product.image %}
+                <img src="{{ item.product.image.url }}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid var(--border);">
+                {% else %}
+                <div style="width:36px;height:36px;border-radius:6px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:1rem;">🎮</div>
+                {% endif %}
+                <div>
+                    <div style="font-size:0.875rem;font-weight:500;">{{ item.product.name }}</div>
+                    <div style="font-family:monospace;font-size:0.78rem;color:var(--success);background:rgba(34,197,94,0.07);padding:1px 8px;border-radius:4px;display:inline-block;margin-top:2px;">{{ item.key }}</div>
+                </div>
+            </div>
+            <span style="font-family:'Rajdhani',sans-serif;font-weight:600;color:var(--orange);white-space:nowrap;">{{ item.price }} ₸</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% empty %}
+<div class="card" style="padding:3rem;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:1rem;">🎮</div>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem;">Вы ещё ничего не купили</p>
+    <a href="/" class="btn btn-primary">Перейти в каталог</a>
+</div>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'store/base.html' %}
+{% block content %}
+
+<div style="max-width: 480px; margin: 0 auto;">
+
+    <h1 class="page-title">Оформление <span>заказа</span></h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="{% url 'process_order' %}">
+                {% csrf_token %}
+
+                <div style="font-size:0.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color: var(--text-dim); margin-bottom:1rem;">
+                    Контактная информация
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Имя</label>
+                    <input type="text" name="name" class="form-control" placeholder="Иван Иванов" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="ivan@example.com" required>
+                </div>
+
+                <hr class="divider" style="margin: 1.25rem 0;">
+
+                <div style="font-size:0.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color: var(--text-dim); margin-bottom:1rem;">
+                    Данные карты
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Номер карты</label>
+                    <input type="text" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                </div>
+
+                <div class="row row-2" style="gap:1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Срок действия</label>
+                        <input type="text" class="form-control" placeholder="MM/YY" maxlength="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CVV</label>
+                        <input type="text" class="form-control" placeholder="•••" maxlength="3" required>
+                    </div>
+                </div>
+
+                <div style="background: var(--orange-faint); border: 1px solid var(--border-orange); border-radius: var(--radius); padding: 12px 14px; font-size:0.8rem; color: var(--text-muted); margin-bottom:1.25rem;">
+                    🔒 Данные защищены. После оплаты вы мгновенно получите ключи.
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg w-100">
+                    ✔ Оплатить
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <a href="/cart/" class="btn btn-ghost mt-3" style="display:block; text-align:center;">← Вернуться в корзину</a>
+</div>
+
+{% endblock %}

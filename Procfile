@@ -1,0 +1,1 @@
+web: gunicorn Qwim_store.wsgi

@@ -1,0 +1,74 @@
+{% extends 'store/base.html' %}
+{% block content %}
+
+<h1 class="page-title">Корзина</h1>
+
+{% if cart_items %}
+
+<div class="card mb-4">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Цена</th>
+                <th>Кол-во</th>
+                <th>Сумма</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td>
+                    <a href="{% url 'product_detail' item.product.slug %}"
+                       style="color: var(--text); text-decoration:none; font-weight:500;">
+                        {{ item.product.name }}
+                    </a>
+                    <div style="font-size:0.75rem; color: var(--text-dim); margin-top:2px;">{{ item.product.platform }}</div>
+                </td>
+                <td style="color: var(--text-muted);">{{ item.product.price }} ₸</td>
+                <td>
+                    <span style="background: var(--surface2); padding: 4px 12px; border-radius:6px; font-family:'Rajdhani',sans-serif; font-weight:600;">
+                        {{ item.quantity }}
+                    </span>
+                </td>
+                <td style="font-family:'Rajdhani',sans-serif; font-size:1.05rem; color: var(--orange); font-weight:700;">
+                    {{ item.subtotal }} ₸
+                </td>
+                <td>
+                    <a href="{% url 'remove_from_cart' item.product.id %}" class="btn btn-danger-outline btn-sm">
+                        ✕ Удалить
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Итого -->
+<div style="display:flex; justify-content:flex-end;">
+    <div class="card" style="min-width: 300px;">
+        <div class="card-body">
+            <div style="font-size:0.8rem; color: var(--text-muted); margin-bottom:8px;">Итого к оплате:</div>
+            <div style="font-family:'Rajdhani',sans-serif; font-size:2rem; font-weight:700; color: var(--orange); margin-bottom:1rem;">
+                {{ total }} ₸
+            </div>
+            <a href="{% url 'checkout' %}" class="btn btn-success btn-lg w-100">
+                ✔ Оформить заказ
+            </a>
+            <a href="/" class="btn btn-ghost w-100 mt-2" style="text-align:center;">← Продолжить покупки</a>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div style="text-align:center; padding: 5rem 2rem; color: var(--text-muted);">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">🛒</div>
+    <h2 style="font-family:'Rajdhani',sans-serif; font-size:1.5rem; margin-bottom:0.5rem;">Корзина пуста</h2>
+    <p style="margin-bottom:1.5rem;">Добавьте игры из каталога, чтобы оформить заказ</p>
+    <a href="/" class="btn btn-primary">Перейти в каталог</a>
+</div>
+{% endif %}
+
+{% endblock %}

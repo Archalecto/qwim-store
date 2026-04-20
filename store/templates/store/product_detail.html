@@ -1,0 +1,336 @@
+{% extends 'store/base.html' %}
+{% block content %}
+
+<!-- ───── БЛОК: главное фото + галерея + инфо ───── -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+
+    <!-- ЛЕВАЯ КОЛОНКА: главное фото + миниатюры -->
+    <div style="display:flex;flex-direction:column;gap:10px;">
+
+        <div id="main-image-wrap"
+             style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:#0e0e10;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;cursor:zoom-in;"
+             onclick="openLightbox(currentIndex)">
+            {% if product.image %}
+            <img id="main-image" src="{{ product.image.url }}"
+                 style="width:100%;height:100%;object-fit:contain;display:block;transition:opacity 0.2s;"
+                 alt="{{ product.name }}">
+            {% else %}
+            <div style="font-size:4rem;color:var(--text-dim);">🎮</div>
+            {% endif %}
+        </div>
+
+        {% if screenshots %}
+        <div id="thumbs" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;">
+            {% for ss in screenshots %}
+            <img src="{{ ss.image.url }}"
+                 data-full="{{ ss.image.url }}"
+                 data-index="{{ forloop.counter0 }}"
+                 onclick="selectThumb(this, {{ forloop.counter0 }})"
+                 class="thumb {% if forloop.first %}active-thumb{% endif %}"
+                 style="width:72px;height:50px;object-fit:contain;background:#0e0e10;border-radius:8px;cursor:pointer;border:2px solid {% if forloop.first %}var(--orange){% else %}transparent{% endif %};flex-shrink:0;transition:border-color 0.15s,transform 0.15s;"
+                 alt="{{ ss.caption|default:'Скриншот' }}">
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- ПРАВАЯ КОЛОНКА: инфо + превью скриншотов в свободном месте -->
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+
+        <div>
+            <h1 style="font-family:'Rajdhani',sans-serif;font-size:1.75rem;font-weight:700;line-height:1.2;margin-bottom:8px;">{{ product.name }}</h1>
+            <span style="font-size:0.8rem;color:var(--text-muted);background:var(--surface2);padding:3px 10px;border-radius:6px;border:1px solid var(--border);">
+                🖥 {{ product.platform }}
+            </span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span class="stars">
+                {% widthratio product.average_rating 1 1 as r %}
+                {% if r >= 1 %}★{% else %}<span class="empty">☆</span>{% endif %}{% if r >= 2 %}★{% else %}<span class="empty">☆</span>{% endif %}{% if r >= 3 %}★{% else %}<span class="empty">☆</span>{% endif %}{% if r >= 4 %}★{% else %}<span class="empty">☆</span>{% endif %}{% if r >= 5 %}★{% else %}<span class="empty">☆</span>{% endif %}
+            </span>
+            <span style="font-size:0.8rem;color:var(--text-muted);">({{ product.average_rating|floatformat:1 }})</span>
+            <span style="font-size:0.8rem;color:var(--text-dim);">· {{ reviews|length }} отзывов</span>
+        </div>
+
+        <div>
+            {% for tag in product.tags.all %}
+            <a href="?tag={{ tag.slug }}" class="tag-badge">{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+
+        <div style="font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;color:var(--orange);">
+            {{ product.price }} ₸
+        </div>
+
+        {% if product.available_keys > 0 %}
+        <span class="stock-badge stock-ok" style="font-size:0.85rem;padding:6px 12px;width:fit-content;">
+            ✔ В наличии ({{ product.available_keys }} ключей)
+        </span>
+        <a href="{% url 'add_to_cart' product.id %}" class="btn btn-primary btn-lg">
+            🛒 Добавить в корзину
+        </a>
+        {% else %}
+        <span class="stock-badge stock-no" style="font-size:0.85rem;padding:6px 12px;width:fit-content;">
+            ✖ Нет в наличии
+        </span>
+        <button class="btn btn-outline btn-lg" disabled>Нет в наличии</button>
+        {% endif %}
+
+    </div>
+</div>
+
+<hr class="divider">
+
+<h2 style="font-family:'Rajdhani',sans-serif;font-size:1.4rem;margin-bottom:1rem;">Описание</h2>
+<div style="color:var(--text-muted);line-height:1.8;font-size:0.9rem;">
+    {{ product.description|linebreaks }}
+</div>
+
+<hr class="divider">
+
+<h2 style="font-family:'Rajdhani',sans-serif;font-size:1.4rem;margin-bottom:1.25rem;">Отзывы</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;">
+
+    <!-- Форма отзыва -->
+    <div class="card">
+        <div class="card-body">
+            <h3 style="font-family:'Rajdhani',sans-serif;font-size:1.1rem;margin-bottom:1rem;color:var(--orange);">Оставить отзыв</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Ваше имя</label>
+                    <input type="text" name="name" class="form-control" placeholder="Иван" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Отзыв</label>
+                    <textarea name="text" class="form-control" placeholder="Поделитесь впечатлениями..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Оценка</label>
+                    <select name="rating" class="form-control" required>
+                        <option value="5">★★★★★ — Отлично</option>
+                        <option value="4">★★★★☆ — Хорошо</option>
+                        <option value="3">★★★☆☆ — Нормально</option>
+                        <option value="2">★★☆☆☆ — Плохо</option>
+                        <option value="1">★☆☆☆☆ — Ужасно</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary w-100">Отправить отзыв</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Карусель отзывов -->
+    <div>
+        {% if reviews %}
+
+        <!-- Счётчик и навигация -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+            <span id="review-counter" style="font-size:0.8rem;color:var(--text-muted);"></span>
+            <div style="display:flex;gap:6px;">
+                <button onclick="reviewPrev()" id="btn-prev"
+                        style="width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:1rem;transition:all 0.15s;"
+                        onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'"
+                        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">‹</button>
+                <button onclick="reviewNext()" id="btn-next"
+                        style="width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:1rem;transition:all 0.15s;"
+                        onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'"
+                        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">›</button>
+            </div>
+        </div>
+
+        <!-- Слайды отзывов -->
+        <div id="reviews-carousel" style="position:relative;overflow:hidden;">
+            {% for review in reviews %}
+            <div class="review-slide card" data-index="{{ forloop.counter0 }}"
+                 style="display:{% if forloop.first %}flex{% else %}none{% endif %};flex-direction:column;gap:8px;">
+                <div class="card-body">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <span style="font-weight:600;font-family:'Rajdhani',sans-serif;font-size:1rem;">{{ review.name }}</span>
+                        <!-- Звёзды: используем review.rating напрямую как число -->
+                        <span class="stars" style="font-size:0.95rem;letter-spacing:2px;">
+                            {% if review.rating >= 1 %}★{% else %}<span class="empty">☆</span>{% endif %}{% if review.rating >= 2 %}★{% else %}<span class="empty">☆</span>{% endif %}{% if review.rating >= 3 %}★{% else %}<span class="empty">☆</span>{% endif %}{% if review.rating >= 4 %}★{% else %}<span class="empty">☆</span>{% endif %}{% if review.rating >= 5 %}★{% else %}<span class="empty">☆</span>{% endif %}
+                        </span>
+                    </div>
+                    <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.6;">{{ review.text }}</p>
+                    <small style="color:var(--text-dim);font-size:0.75rem;">{{ review.created_at|date:"d.m.Y H:i" }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Точки-индикаторы -->
+        <div id="review-dots" style="display:flex;gap:6px;justify-content:center;margin-top:1rem;flex-wrap:wrap;">
+            {% for review in reviews %}
+            <button onclick="reviewGoTo({{ forloop.counter0 }})"
+                    class="review-dot"
+                    data-dot="{{ forloop.counter0 }}"
+                    style="width:{% if forloop.first %}20px{% else %}8px{% endif %};height:8px;border-radius:4px;border:none;background:{% if forloop.first %}var(--orange){% else %}var(--surface3){% endif %};cursor:pointer;transition:all 0.2s;padding:0;"></button>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="card" style="padding:2rem;text-align:center;color:var(--text-muted);">
+            Пока нет отзывов. Будьте первым! 💬
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+// ── Карусель отзывов ──
+const slides = document.querySelectorAll('.review-slide');
+const dots   = document.querySelectorAll('.review-dot');
+let reviewIndex = 0;
+
+function reviewGoTo(n) {
+    slides[reviewIndex].style.display = 'none';
+    dots[reviewIndex].style.width = '8px';
+    dots[reviewIndex].style.background = 'var(--surface3)';
+
+    reviewIndex = (n + slides.length) % slides.length;
+
+    slides[reviewIndex].style.display = 'flex';
+    dots[reviewIndex].style.width = '20px';
+    dots[reviewIndex].style.background = 'var(--orange)';
+
+    updateReviewCounter();
+}
+
+function reviewPrev() { reviewGoTo(reviewIndex - 1); }
+function reviewNext() { reviewGoTo(reviewIndex + 1); }
+
+function updateReviewCounter() {
+    const el = document.getElementById('review-counter');
+    if (el) el.textContent = (reviewIndex + 1) + ' / ' + slides.length;
+}
+
+updateReviewCounter();
+</script>
+
+{% if similar_products %}
+<hr class="divider">
+<h2 style="font-family:'Rajdhani',sans-serif;font-size:1.4rem;margin-bottom:1.25rem;">Похожие товары</h2>
+<div class="product-grid">
+    {% for p in similar_products %}
+    <div class="card">
+        {% if p.image %}
+        <img src="{{ p.image.url }}" class="card-img" alt="{{ p.name }}">
+        {% else %}
+        <div style="height:150px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:2rem;">🎮</div>
+        {% endif %}
+        <div class="card-body">
+            <a href="{% url 'product_detail' p.slug %}" class="product-card-title">{{ p.name }}</a>
+            <div class="product-price mt-2">{{ p.price }} ₸</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+<!-- ── LIGHTBOX ── -->
+<div id="lightbox"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <button onclick="prevImage(); event.stopPropagation();"
+            style="position:absolute;left:24px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;width:52px;height:52px;border-radius:50%;font-size:1.5rem;cursor:pointer;z-index:10;transition:background 0.2s;"
+            onmouseover="this.style.background='var(--orange)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">‹</button>
+    <img id="lightbox-img" src="" style="max-width:90vw;max-height:85vh;border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:0 0 80px rgba(0,0,0,0.8);pointer-events:none;" alt="">
+    <button onclick="nextImage(); event.stopPropagation();"
+            style="position:absolute;right:24px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;width:52px;height:52px;border-radius:50%;font-size:1.5rem;cursor:pointer;z-index:10;transition:background 0.2s;"
+            onmouseover="this.style.background='var(--orange)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">›</button>
+    <button onclick="closeLightbox(); event.stopPropagation();"
+            style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;width:40px;height:40px;border-radius:50%;font-size:1rem;cursor:pointer;z-index:10;">✕</button>
+    <div id="lightbox-counter"
+         style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-size:0.8rem;color:var(--text-muted);background:rgba(0,0,0,0.5);padding:4px 16px;border-radius:20px;pointer-events:none;"></div>
+</div>
+
+<script>
+const allImages = [
+    {% for ss in screenshots %}"{{ ss.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}
+];
+
+let currentIndex = 0;
+
+// При загрузке страницы — главное фото = первый скриншот (если есть)
+window.addEventListener('DOMContentLoaded', () => {
+    if (allImages.length > 0) {
+        const mainImg = document.getElementById('main-image');
+        if (mainImg) mainImg.src = allImages[0];
+    }
+});
+
+function selectThumb(el, index) {
+    currentIndex = index;
+    const mainImg = document.getElementById('main-image');
+    mainImg.style.opacity = '0.5';
+    setTimeout(() => { mainImg.src = el.dataset.full; mainImg.style.opacity = '1'; }, 100);
+    document.querySelectorAll('.thumb').forEach(t => {
+        t.style.borderColor = 'transparent';
+        t.style.transform = 'scale(1)';
+    });
+    el.style.borderColor = 'var(--orange)';
+    el.style.transform = 'scale(1.06)';
+}
+
+function selectByIndex(index) {
+    currentIndex = index;
+    const mainImg = document.getElementById('main-image');
+    mainImg.style.opacity = '0.5';
+    setTimeout(() => { mainImg.src = allImages[index]; mainImg.style.opacity = '1'; }, 100);
+    const thumbs = document.querySelectorAll('.thumb');
+    thumbs.forEach(t => t.style.borderColor = 'transparent');
+    if (thumbs[index]) {
+        thumbs[index].style.borderColor = 'var(--orange)';
+        thumbs[index].scrollIntoView({ behavior: 'smooth', inline: 'center' });
+    }
+}
+
+function openLightbox(index) {
+    if (!allImages.length) return;
+    currentIndex = index;
+    document.getElementById('lightbox-img').src = allImages[currentIndex];
+    updateCounter();
+    const lb = document.getElementById('lightbox');
+    lb.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    // Закрытие только по клику на фон (не на кнопки и не на картинку)
+    lb.onclick = function(e) {
+        if (e.target === lb) closeLightbox();
+    };
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function prevImage() {
+    currentIndex = (currentIndex - 1 + allImages.length) % allImages.length;
+    document.getElementById('lightbox-img').src = allImages[currentIndex];
+    updateCounter();
+}
+
+function nextImage() {
+    currentIndex = (currentIndex + 1) % allImages.length;
+    document.getElementById('lightbox-img').src = allImages[currentIndex];
+    updateCounter();
+}
+
+function updateCounter() {
+    document.getElementById('lightbox-counter').textContent = (currentIndex + 1) + ' / ' + allImages.length;
+}
+
+document.addEventListener('keydown', e => {
+    if (document.getElementById('lightbox').style.display !== 'flex') return;
+    if (e.key === 'ArrowLeft') prevImage();
+    else if (e.key === 'ArrowRight') nextImage();
+    else if (e.key === 'Escape') closeLightbox();
+});
+</script>
+
+{% endblock %}

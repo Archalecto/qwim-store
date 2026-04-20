@@ -1,0 +1,197 @@
+{% extends 'store/base.html' %}
+{% block content %}
+
+<h1 class="page-title">
+    {% if category %}{{ category.name }}{% else %}Каталог <span>игр</span>{% endif %}
+</h1>
+
+<div class="row row-sidebar">
+
+    <!-- ── БОКОВАЯ ПАНЕЛЬ ── -->
+    <div>
+
+        <!-- Категории -->
+        <div class="sidebar-title">Категории</div>
+        <a href="/" class="category-link {% if not category %}active{% endif %}">🎮 Все товары</a>
+        {% for c in categories %}
+        <a href="{% url 'product_list_by_category' c.slug %}"
+           class="category-link {% if category.slug == c.slug %}active{% endif %}">
+            {{ c.name }}
+        </a>
+        {% endfor %}
+
+        <!-- Разделитель -->
+        <hr style="border:none;border-top:1px solid var(--border);margin:1.25rem 0;">
+
+        <!-- Форма фильтров -->
+        <form method="get" id="filter-form">
+            {% if category %}
+            <input type="hidden" name="category" value="{{ category.slug }}">
+            {% endif %}
+            {% if query %}
+            <input type="hidden" name="q" value="{{ query }}">
+            {% endif %}
+
+            <!-- Сортировка -->
+            <div class="sidebar-title">Сортировка</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:1.25rem;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 10px;border-radius:8px;border:1px solid {% if selected_sort == 'new' %}var(--border-orange){% else %}transparent{% endif %};background:{% if selected_sort == 'new' %}var(--orange-faint){% else %}transparent{% endif %};">
+                    <input type="radio" name="sort" value="new" {% if selected_sort == 'new' %}checked{% endif %} style="accent-color:var(--orange);" onchange="this.form.submit()">
+                    <span style="font-size:0.85rem;color:{% if selected_sort == 'new' %}var(--orange){% else %}var(--text-muted){% endif %};">Сначала новые</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 10px;border-radius:8px;border:1px solid {% if selected_sort == 'price_asc' %}var(--border-orange){% else %}transparent{% endif %};background:{% if selected_sort == 'price_asc' %}var(--orange-faint){% else %}transparent{% endif %};">
+                    <input type="radio" name="sort" value="price_asc" {% if selected_sort == 'price_asc' %}checked{% endif %} style="accent-color:var(--orange);" onchange="this.form.submit()">
+                    <span style="font-size:0.85rem;color:{% if selected_sort == 'price_asc' %}var(--orange){% else %}var(--text-muted){% endif %};">Сначала дешевле</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 10px;border-radius:8px;border:1px solid {% if selected_sort == 'price_desc' %}var(--border-orange){% else %}transparent{% endif %};background:{% if selected_sort == 'price_desc' %}var(--orange-faint){% else %}transparent{% endif %};">
+                    <input type="radio" name="sort" value="price_desc" {% if selected_sort == 'price_desc' %}checked{% endif %} style="accent-color:var(--orange);" onchange="this.form.submit()">
+                    <span style="font-size:0.85rem;color:{% if selected_sort == 'price_desc' %}var(--orange){% else %}var(--text-muted){% endif %};">Сначала дороже</span>
+                </label>
+            </div>
+
+            <!-- Платформа -->
+            {% if platforms %}
+            <div class="sidebar-title">Платформа</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:1.25rem;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 10px;border-radius:8px;border:1px solid {% if not selected_platform %}var(--border-orange){% else %}transparent{% endif %};background:{% if not selected_platform %}var(--orange-faint){% else %}transparent{% endif %};">
+                    <input type="radio" name="platform" value="" {% if not selected_platform %}checked{% endif %} style="accent-color:var(--orange);" onchange="this.form.submit()">
+                    <span style="font-size:0.85rem;color:{% if not selected_platform %}var(--orange){% else %}var(--text-muted){% endif %};">Все платформы</span>
+                </label>
+                {% for p in platforms %}
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 10px;border-radius:8px;border:1px solid {% if selected_platform == p %}var(--border-orange){% else %}transparent{% endif %};background:{% if selected_platform == p %}var(--orange-faint){% else %}transparent{% endif %};">
+                    <input type="radio" name="platform" value="{{ p }}" {% if selected_platform == p %}checked{% endif %} style="accent-color:var(--orange);" onchange="this.form.submit()">
+                    <span style="font-size:0.85rem;color:{% if selected_platform == p %}var(--orange){% else %}var(--text-muted){% endif %};">{{ p }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Цена -->
+            <div class="sidebar-title">Цена, ₸</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <input type="number" name="price_min" value="{{ price_min }}" placeholder="От"
+                       style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px;font-size:0.82rem;outline:none;"
+                       min="0">
+                <span style="color:var(--text-dim);font-size:0.8rem;">—</span>
+                <input type="number" name="price_max" value="{{ price_max }}" placeholder="До"
+                       style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px;font-size:0.82rem;outline:none;"
+                       min="0">
+            </div>
+            <button type="submit" class="btn btn-primary w-100" style="font-size:0.82rem;padding:8px;">
+                Применить
+            </button>
+
+            <!-- Сброс фильтров -->
+            {% if selected_platform or price_min or price_max or selected_sort != 'new' %}
+            <a href="{% if category %}{% url 'product_list_by_category' category.slug %}{% else %}/{% endif %}"
+               class="btn btn-ghost w-100 mt-2" style="font-size:0.78rem;text-align:center;">
+                ✕ Сбросить фильтры
+            </a>
+            {% endif %}
+
+        </form>
+
+    </div>
+
+    <!-- ── ТОВАРЫ ── -->
+    <div>
+
+        <!-- Счётчик результатов -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <span style="font-size:0.82rem;color:var(--text-muted);">
+                Найдено: <b style="color:var(--text);">{{ page_obj.paginator.count }}</b> товаров
+                {% if query %} по запросу «<b style="color:var(--orange);">{{ query }}</b>»{% endif %}
+            </span>
+            <span style="font-size:0.78rem;color:var(--text-dim);">
+                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+            </span>
+        </div>
+
+        <!-- Сетка товаров -->
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="card" style="display:flex;flex-direction:column;">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" class="card-img" alt="{{ product.name }}">
+                {% else %}
+                <div style="height:180px;background:linear-gradient(135deg,#1c1c20 0%,#242428 100%);display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:2.5rem;">🎮</div>
+                {% endif %}
+                <div class="card-body" style="display:flex;flex-direction:column;gap:8px;flex:1;">
+                    <a href="{% url 'product_detail' product.slug %}" class="product-card-title">
+                        {{ product.name }}
+                    </a>
+                    <div>
+                        {% for tag in product.tags.all %}
+                        <a href="?tag={{ tag.slug }}" class="tag-badge">{{ tag.name }}</a>
+                        {% endfor %}
+                    </div>
+                    <p class="product-desc">{{ product.description|truncatechars:80 }}</p>
+                    <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                            <span class="product-price">{{ product.price }} ₸</span>
+                            {% if product.available_keys > 0 %}
+                            <span class="stock-badge stock-ok">✔ {{ product.available_keys }}</span>
+                            {% else %}
+                            <span class="stock-badge stock-no">✖ Нет</span>
+                            {% endif %}
+                        </div>
+                        {% if product.available_keys > 0 %}
+                        <a href="{% url 'product_detail' product.slug %}" class="btn btn-primary w-100">Подробнее →</a>
+                        {% else %}
+                        <button class="btn btn-outline w-100" disabled>Нет в наличии</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--text-muted);">
+                <div style="font-size:3rem;margin-bottom:1rem;">🔍</div>
+                <p style="margin-bottom:1rem;">Ничего не найдено по заданным фильтрам</p>
+                <a href="/" class="btn btn-outline">Сбросить фильтры</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- ── ПАГИНАЦИЯ ── -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div style="display:flex;justify-content:center;align-items:center;gap:6px;margin-top:2.5rem;flex-wrap:wrap;">
+
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if selected_platform %}&platform={{ selected_platform }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+               class="btn btn-outline" style="padding:8px 14px;">‹</a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;background:var(--orange);color:#fff;font-weight:700;font-size:0.875rem;font-family:'Rajdhani',sans-serif;">
+                    {{ num }}
+                </span>
+                {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                <a href="?page={{ num }}{% if selected_platform %}&platform={{ selected_platform }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+                   style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);text-decoration:none;font-size:0.875rem;font-family:'Rajdhani',sans-serif;transition:border-color 0.15s,color 0.15s;"
+                   onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'"
+                   onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">
+                    {{ num }}
+                </a>
+                {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                <a href="?page={{ num }}{% if selected_platform %}&platform={{ selected_platform }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+                   style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);text-decoration:none;font-size:0.875rem;font-family:'Rajdhani',sans-serif;">
+                    {{ num }}
+                </a>
+                {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+                <span style="color:var(--text-dim);padding:0 4px;">…</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if selected_platform %}&platform={{ selected_platform }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+               class="btn btn-outline" style="padding:8px 14px;">›</a>
+            {% endif %}
+
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}
